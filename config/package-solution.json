@@ -1,0 +1,11 @@
+{
+  "$schema": "https://dev.office.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "spf-todo-client-side-solution",
+    "id": "3e23f2fb-d743-49de-89e3-2a867681d3c2",
+    "version": "1.0.0.0"
+  },
+  "paths": {
+    "zippedPackage": "solution/spf-todo.sppkg"
+  }
+}

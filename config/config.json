@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "entry": "./lib/webparts/toDo/ToDoWebPart.js",
+      "manifest": "./src/webparts/toDo/ToDoWebPart.manifest.json",
+      "outputPath": "./dist/to-do-web-part.bundle.js"
+    }
+  ],
+  "externals": {},
+  "localizedResources": {
+    "ToDoWebPartStrings": "webparts/toDo/loc/{locale}.js"
+  }
+}
