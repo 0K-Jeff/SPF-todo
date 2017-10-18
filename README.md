@@ -1,6 +1,6 @@
 ## spf-todo
 
-This is where you include your WebPart documentation.
+To-Do list built for the new Sharepoint Framework.
 
 ### Building the code
 
