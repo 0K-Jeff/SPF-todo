@@ -59,11 +59,12 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     this.domElement.innerHTML = `
       <div class="${styles.toDo}">
         <p>Potato</p>
+        <p>${this.properties.displaycount}
       </div>`;
 
-      this._fetchListItems('Test').then((response) => {
-        console.log(response);
-      })
+      // this._fetchListItems('Test').then((response) => {
+      //   console.log(response);
+      // })
   }
   // Version
   protected get dataVersion(): Version {
@@ -85,11 +86,12 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
                 label: 'To-Do List Name'
               }), //display item field
               PropertyPaneSlider('displaycount', {
+                value: 5,
                 max: 15,
                 min: 3,
                 label: 'Number of Items to Display',
-                showValue: true,
-                value: 5
+                showValue: true
+
               }), // Button method
               PropertyPaneButton('todolist', {
                 onClick: function(createlistbutton){
