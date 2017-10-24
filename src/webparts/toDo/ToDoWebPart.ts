@@ -5,6 +5,7 @@ import {
   IPropertyPaneConfiguration,
   PropertyPaneCheckbox,
   PropertyPaneToggle,
+  PropertyPaneSlider,
   PropertyPaneButton,
   PropertyPaneButtonType,
   PropertyPaneTextField
@@ -29,7 +30,7 @@ import * as strings from 'ToDoWebPartStrings';
 // define values for use later
 export interface IToDoWebPartProps {
   todolist: string;
-  displaycount: string;
+  displaycount: number;
   createlistbutton: string;
 }
 
@@ -83,10 +84,12 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
               PropertyPaneTextField('todolist', {
                 label: 'To-Do List Name'
               }), //display item field
-              PropertyPaneTextField('displaycount', {
-                deferredValidationTime: 400,
-                label: 'To-Do Item Display Limit',
-                maxLength: 2
+              PropertyPaneSlider('displaycount', {
+                max: 15,
+                min: 3,
+                label: 'Number of Items to Display',
+                showValue: true,
+                value: 5
               }), // Button method
               PropertyPaneButton('todolist', {
                 onClick: function(createlistbutton){
@@ -104,22 +107,3 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     };
   }
 }
-
-// Input Validation for display limit
-document.getElementsByClassName(".ms-TextField-field").addEventListener("change", function() {
-  let newvalue: string = document.getElementsByClassName(".ms-TextField-field").value
-  if (newvalue != ''){
-    let endstring: string = '';
-    let newarray: string[] = newvalue.split('');
-    for(let i of newarray) {
-      let checknum = Number(i);
-      if (checknum == NaN){
-        endstring = '';
-      }
-      if (checknum != NaN){
-        endstring = endstring+i;
-      }
-    }
-    document.getElementsByClassName(".ms-TextField-field").value = endstring;
-  }
-});
