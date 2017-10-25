@@ -41,14 +41,17 @@ export interface SPtodolist {
 export interface SPtodolistparts {
   Title: string;
   Id: string;
+  Finished: boolean;
+  Cancelled: boolean;
 }
 
 // build web part
 export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPartProps> {
 
-  // Get Method
-  private _fetchListItems(todolist: string): Promise<SPtodolist> {
-    return this.context.spHttpClient.get(this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('${todolist}')?`, SPHttpClient.configurations.v1)
+  // Get Method, fetching lists.
+  public _fetchLists(todolist: string): Promise<SPtodolist> {
+    let firstquery: string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists`;
+    return this.context.spHttpClient.get(firstquery, SPHttpClient.configurations.v1)
     .then((response: SPHttpClientResponse) =>
     {return response.json();
     });
@@ -61,15 +64,13 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
         <p>Potato</p>
         <p>${this.properties.displaycount}
       </div>`;
-
-      // this._fetchListItems('Test').then((response) => {
-      //   console.log(response);
-      // })
   }
+
   // Version
   protected get dataVersion(): Version {
     return Version.parse('1.0');
   }
+
   //configure edit mode panel
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
@@ -92,11 +93,19 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
                 label: 'Number of Items to Display',
                 showValue: true
 
-              }), // Button method
+              }), // Button method - Gets, then decides if it needs to Post
               PropertyPaneButton('todolist', {
-                onClick: function(createlistbutton){
-                  createlistbutton = createlistbutton+"1";
-                  console.log(createlistbutton);
+                onClick: (createlistbutton)=>{
+                  this._fetchLists(createlistbutton).then((response) => {
+                    let Titles: string[] = (response.value.map(function(listobject: any){return listobject.Title}));
+                    for (let ite = 0; ite < Titles.length; ite++){
+                      let finalquery: string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists`;
+                      if(Titles[ite] == createlistbutton) {
+                        finalquery += `/GetByTitle('${createlistbutton}')/items`;
+                        console.log(finalquery);
+                      }
+                    }
+                  })
                   return createlistbutton;
                 },
                 buttonType: PropertyPaneButtonType.Primary,
