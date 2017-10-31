@@ -15,7 +15,8 @@ import { escape } from '@microsoft/sp-lodash-subset';
 
 import {
   SPHttpClient,
-  SPHttpClientResponse
+  SPHttpClientResponse,
+  ISPHttpClientOptions
 } from '@microsoft/sp-http';
 
 import {
@@ -29,6 +30,8 @@ import * as strings from 'ToDoWebPartStrings';
 // ----------------------------------- //
 
 // define values for use later
+let todolist: string = 'Default';
+
 export interface IToDoWebPartProps {
   todolist: string;
   displaycount: number;
@@ -47,16 +50,31 @@ export interface SPtodolistparts {
   Cancelled: boolean;
 }
 
-// Insert warning after list Name field.
-  function insertAfter (newNode, targetElement) {
-    targetElement.insertAdjacentElement('afterend', newNode);
-  }
+// ToDo List ID ---- EDIT HERE ON INITIAL CONFIGURATION --- //
+
+  let TODOLISTID: string = '0x0100CDA8167196CB8248AACFC2DA5E5291DC';
+
+//  --------------------------- //
 
 // build web part
 export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPartProps> {
 
+  // Entry validation method, commpares with existing lists and informs if list already exists // THIS CAN CAUSE ERRORS IN CURRENT FRAMEWORK //
+  // public ListExistCheck(ListTitle: String): Promise<string> {
+  //   return this._fetchLists().then((response) => {
+  //     let errorMsg: string = '';
+  //     let listTitles: string[] = response.value.map(function(listobject: any){return listobject.Title});
+  //       for (let itr = 0; itr < listTitles.length; itr++){
+  //         if (listTitles[itr] == ListTitle){
+  //         errorMsg = 'This List is now loaded.';
+  //       }
+  //     };
+  //     return Promise.resolve(errorMsg);
+  //   });
+  // }
+
   // Get Method, fetching lists.
-  public _fetchLists(todolist: string): Promise<SPtodolist> {
+  public _fetchLists(): Promise<SPtodolist> {
     let firstquery: string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists`;
     return this.context.spHttpClient.get(firstquery, SPHttpClient.configurations.v1)
     .then((response: SPHttpClientResponse) =>
@@ -64,14 +82,35 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     });
   }
 
-  // Post Method, making a new list
-  public _postList(todolist: string): Promise<SPtodolist> {
-    let postlist: string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists`;
-    let options: string = "";
-    return this.context.spHttpClient.post(postlist, SPHttpClient.configurations.v1, options)
-    // not done this bit yet
-    .then((response: SPHttpClientResponse) =>
-    {return response.json();
+  // Post Method, making a new list, configuring
+  public _postList(todolist: string): void {
+    let restURL: string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists`;
+
+    // Configuration of list settings for POST
+      let listoptions: string = JSON.stringify({
+        Title: todolist,
+        BaseTemplate: 100,
+        ContentTypesEnabled: true,
+        //ContentType: 'ToDo List',
+        //ContentTypeId: TODOLISTID
+      });
+
+    // Interface for new List Post Request
+      let newList: ISPHttpClientOptions = {
+        body: listoptions
+      };
+
+    // place request
+    this.context.spHttpClient.post(restURL, SPHttpClient.configurations.v1, newList)
+    // handle post response
+    .then((response: SPHttpClientResponse) => {
+      console.log(`Status code: ${response.status}`);
+      console.log(`Status Text: ${response.statusText}`);
+
+      //
+      response.json().then((responseJSON: JSON) => {
+        console.log(responseJSON);
+      });
     });
   }
 
@@ -80,7 +119,7 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     this.domElement.innerHTML = `
       <div class="${styles.toDo}">
         <p>Potato</p>
-        <p>${this.properties.displaycount}
+        <p>${this.properties.displaycount}</p>
       </div>`;
   }
 
@@ -101,8 +140,10 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
             {     // list name field
               groupName: 'Enter List Name',
               groupFields: [
-              PropertyPaneTextField('todolist', {
+              PropertyPaneTextField(todolist, {
                 label: 'To-Do List Name'
+                // onGetErrorMessage: this.ListExistCheck.bind(this),
+                // errorMessage: ''
               }), //display item field
               PropertyPaneSlider('displaycount', {
                 max: 15,
@@ -110,31 +151,28 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
                 label: 'Number of Items to Display',
                 showValue: true
               }), // Button method - Gets, then decides if it needs to Post
-              PropertyPaneButton('todolist', {
-                onClick: (createlistbutton) => {
+              PropertyPaneButton(todolist, {
+                onClick: (todolist) => {
                   // Run Get Request on All Lists and return title array, then check for list already existing
-                  this._fetchLists(createlistbutton).then((response) => {
+                  this._fetchLists().then((response) => {
                     let createlistflag: boolean = true;
                     let Titles: string[] = (response.value.map(function(listobject: any){return listobject.Title}));
-                    for (let ite = 0; ite < Titles.length; ite++){
-                      if(Titles[ite] == createlistbutton) {
-                        if (document.getElementById('warningtextID') == null){
-                        let warningtext = document.createElement('span');
-                        warningtext.innerHTML = "<br> That List Already Exists.";
-                        warningtext.id = 'warningtextID';
-                        warningtext.style.color = '#ff0000';
-                        insertAfter(warningtext, this);
-                      }
+                    // run array and check if list Title already exists
+                    for (let itr = 0; itr < Titles.length; itr++){
+                      if(Titles[itr] == todolist) {
+                        todolist = todolist;
                         createlistflag = false;
+                        alert('List already exists.');
                         break;
                       }
                     }
                     if (createlistflag == true) {
                       // make Post request
-
+                      this._postList(todolist);
+                      alert('List Created.');
                     }
                   })
-                  return createlistbutton;
+                  return todolist;
                 },
                 buttonType: PropertyPaneButtonType.Primary,
                 text: 'Create List'
