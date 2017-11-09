@@ -1,0 +1,43 @@
+  .MarkDone {
+    height: 21px;
+    width: 21px;
+    border-radius: 45%;
+    background: green;
+    float: left;
+    display: inline-block;
+    margin-top: 9px;
+    margin-right: 4%;
+  }
+
+  .ItemTitle {
+    width: 73%;
+    display: inline-block;
+    background: lightgray;
+    padding: 8px;
+    margin: 2px;
+    margin-right: 15%;
+    float: left;
+    border-radius: 5px;
+  }
+
+  .datahidden {
+    display: none;
+  }
+
+  .newItemButton {
+    background: blue;
+    color: white;
+    padding: 10px;
+    margin: 2px;
+    margin-left: 10%;
+    float:left;
+    border-radius: 5px;
+  }
+
+  .newItemButton:hover {
+    background: teal;
+  }
+
+  .newItemButton::after {
+    clear: both;
+  }
