@@ -128,11 +128,13 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
 
   // LIST ITEM POST METHODS ------------------------------------------------ //
   // Post Method, Creating a new List Item
-  public _postListItem(listTitle:string, ItemName:string): void{
-    let capstitle:string = listTitle.toUpperCase();
-    let ETFN:string = `SP.data.${capstitle}ListItem`
-    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${listTitle}')/items`
-    let newitemops:ISPHttpClientOptions = {body: {'type': `${ETFN}`, 'Title': `${ItemName}`}};
+  //
+  // TODO Reconfigure these to accept HTML element, storing relevant data in HTML items at build.
+  public _postListItem(me: any): void{
+    let capstitle:string = me.dataset.contentlistname.toUpperCase();
+    let ContainerListDataString:string = `SP.data.${capstitle}ListItem`
+    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${me.dataset.contentlistname}')/items`
+    let newitemops:ISPHttpClientOptions = {body: {'type': `${ContainerListDataString}`, 'Title': `New ToDo Item`}};
     this.context.spHttpClient.post(targetURL, SPHttpClient.configurations.v1, newitemops)
     .then((response: SPHttpClientResponse) => {
       response.json().then((responseJSON: any) => {
@@ -141,11 +143,11 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     })
   }
   // Post Method, Updating list items.
-  public _updateListItem(listTitle:string, ItemName:string, itemId:string): void{
-    let capstitle:string = listTitle.toUpperCase();
-    let ETFN:string = `SP.data.${capstitle}ListItem`
-    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${listTitle}')/items(${itemId})`
-    let newitemops:ISPHttpClientOptions = {headers: {'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*'}, body: {'type': `${ETFN}`, 'Title': `${ItemName}`}};
+  public _updateListItem(me: any): void{
+    let capstitle:string = me.dataset.contentlistname.toUpperCase();
+    let ContainerListDataString:string = `SP.data.${capstitle}ListItem`
+    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${me.dataset.contentlistname}')/items(${me.dataset.itemid})`
+    let newitemops:ISPHttpClientOptions = {headers: {'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*'}, body: {'type': `${ContainerListDataString}`, 'Title': `${me.value}`, 'Complete': `${me.dataset.itemcomplete}`}};
     this.context.spHttpClient.post(targetURL, SPHttpClient.configurations.v1, newitemops)
     .then((response: SPHttpClientResponse) => {
       response.json().then((responseJSON: any) => {
@@ -154,8 +156,8 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     })
   }
   // Post Method, Deleting list items
-  public _deleteListItem(listTitle:string, itemId:string): void{
-    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${listTitle}')/items/items(${itemId})`
+  public _deleteListItem(me: any): void{
+    let targetURL:string = this.context.pageContext.web.absoluteUrl+`/_api/web/lists/getbytitle('${me.dataset.contentlistname}')/items/items(${me.dataset.itemid})`
     let newitemops:ISPHttpClientOptions = {headers: {'X-HTTP-Method':'DELETE', 'IF-MATCH': '*'}};
     this.context.spHttpClient.post(targetURL, SPHttpClient.configurations.v1, newitemops)
     .then((response: SPHttpClientResponse) => {
@@ -166,16 +168,7 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
   }
   // ----------------------------------------------------------------------- //
 
-  // Front End Item Manipulation methods ------------------------------------//
-
-  // Create a new list item -- attach to button
-
-
-  // Delete list item -- attach to button
-
-
-  // Modify a list item -- attach to something
-
+  // TODO Still need to create functioning onclick event handlers for my buttons, handle pagination, and then complete my filters. When those are done, there will only be styling and compiling left.
 
   // ------------------------------------------------------------------------//
 
@@ -186,18 +179,25 @@ export default class ToDoWebPartWebPart extends BaseClientSideWebPart<IToDoWebPa
     this._fetchListItems(this.properties.todolist).then((response: any) => {
       response.json().then((responseJSON: any) => {
         console.log(responseJSON);
+        let uniqueID = 'filter' + this.properties.todolist;
         let listbodyhtml:string = '';
+        // filters at the top of the document
+        listbodyhtml = listbodyhtml + `<div class='filters'><p>Display: </p><p class="uniqueID">Complete</p><p class="uniqueID">Incomplete</p><p class="uniqueID">All</p></div>`;
+        // TODO Create Filter based on this.properties value which can be altered on frontend also
+
+        // Generate list of items
         for (let iter = 0; iter < responseJSON.value.length; iter++){
-          let listHtml:string = // TODO Add data tracking for Complete and IsActive variables and store in DOM for use.
-          `<div class='ToDoItem'>
-            <div class='MarkDone ${responseJSON.value[iter].Complete ? 'ItemDone' : ''}'> </div>
-            <p class="ItemTitle">${responseJSON.value[iter].Title}</p>
-            <div class='MarkInactive datahidden ${responseJSON.value[iter].IsActive1 ? 'IsNotInactive' : ''}'> </div>
-            <span class='datahidden'>${responseJSON.value[iter].ID}</span>
-          </div>`;
-          listbodyhtml = listbodyhtml + listHtml;
+          let completedItem:boolean = responseJSON.value.Complete;
+              let listHtml:string =
+              `<div class='ToDoItem'>
+                <div class='MarkDone ${responseJSON.value[iter].Complete ? 'ItemDone' : ''}' data-itemid=${responseJSON.value[iter].ID} data-contentlistname='${this.properties.todolist}'> </div>
+                <form><input type='text' class="ItemTitle" value='${responseJSON.value[iter].Title}' data-itemid='${responseJSON.value[iter].ID}' data-contentlistname='${this.properties.todolist}' data-itemcomplete='${responseJSON.value[iter].Complete}'></input></form>
+                <div class='CancelItem' data-contentlistname='${this.properties.todolist}' data-itemid='${responseJSON.value[iter].ID}' onClick='this._deleteListItem(this)'>X</div>
+              </div>`;
+              listbodyhtml = listbodyhtml + listHtml;
         }
-        let newItemButton:string = `<div class='newItemButton'>BUTTON</div>`;
+        let newItemButton:string = `<div class='newItemButton' data-contentlistname='${this.properties.todolist}' onClick='this._postListItem(this)'>BUTTON</div>`;
+        // TODO PAGINATION
         listbodyhtml = listbodyhtml + newItemButton;
         this.domElement.innerHTML = listbodyhtml;
       })
